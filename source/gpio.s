@@ -14,21 +14,24 @@ GetGpioAddress:
 /**
  * Selects the function for the given pin number.
  * WARNING: currently zeroes out nearby pin functions.
- * Input:
- * r0: GPIO pin number, 0..53
- * r1: Pin function, 0..7
  */
 SetGpioFunction:
+  pinNum .req r0  @ 0..53
+  pinFunc .req r1  @ 0..7
+
   /* input validation */
-  cmp r0, #53
-  cmpls r1, #7  @ only if r0 <= 53
-  movhi pc, lr  @ return if r0 > 53 or r1 > 7
+  cmp pinNum, #53
+  cmpls pinFunc, #7
+  movhi pc, lr  @ return if pinNum > 53 or pinFunc > 7
 
   push {lr}  @ store return address.
 
   /* get GPIO address into r0 */
+  .unreq pinNum
   mov r2, r0  @ Free up r0 for GetGpioAddress.
+  pinNum .req r2
   bl GetGpioAddress
+  gpioAddr .req r0
 
   /*
   state:
@@ -43,9 +46,9 @@ SetGpioFunction:
   number, adds 4 to GPIO Controller address.
   */
   pinMapLoop$:
-    cmp r2, #9
-    subhi r2, #10
-    addhi r2, #4
+    cmp pinNum, #9  @ while pinNum > 9
+    subhi pinNum, #10  @ subract 10
+    addhi gpioAddr, #4  @ and add 4 to gpioAddr
     bhi pinMapLoop$
 
   /*
@@ -55,8 +58,9 @@ SetGpioFunction:
   r2: GPIO pin number within the current bank.
   */
 
-  add r2, r2, lsl #1  @ r2 *= 3 (implemented as r2 + r2 * 2)
-  lsl r1, r2  @ Shift function value; 3 bits per pin.
+  add pinNum, pinNum, lsl #1  @ pinNum *= 3 (implemented as pinNum + pinNum * 2)
+  lsl pinFunc, pinNum  @ Shift function value; 3 bits per pin.
+  .unreq pinNum
 
   /*
   state:
@@ -67,8 +71,10 @@ SetGpioFunction:
 
   /* Store computed function value at address in GPIO controller */
   @ TODO: only alter three bits, don't overwite other pin values.
-  str r1, [r0]
+  str pinFunc, [gpioAddr]
 
+  .unreq pinFunc
+  .unreq gpioAddr
   pop {pc}
 
 
