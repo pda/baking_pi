@@ -1,29 +1,50 @@
 .section .init
 .globl _start
 _start:
+b main
 
-ldr r0, =0x20200000  @ GPIO controller address
+.section .text
+main:
+mov sp, #0x8000
+
+bl GetGpioAddress
 
 /* Enable output to 16th GPIO pin. */
-mov r1, #1
-lsl r1, #18  @ (see below)
-str r1, [r0, #4]
-/*
-http://www.cl.cam.ac.uk/freshers/raspberrypi/tutorials/os/ok01.html
-Since we want the 16th GPIO pin, we need the second set of 4 bytes because
-we're dealing with pins 10-19, and we need the 6th set of 3 bits, which is
-where the number 18 (6×3) comes from in the code above.
-*/
+pinNum .req r0
+pinFunc .req r1
+mov pinNum, #16
+mov pinFunc, #1  @ Use pin as output.
+bl SetGpioFunction
+.unreq pinNum
+.unreq pinFunc
 
 /* Flash OK light forever. */
-mov r1, #1
-lsl r1, #16  @ 16th GPIO pin.
 flash_loop$:
-  str r1, [r0, #40]  @ Turn pin off to turn light on.
+
+  /* clear pin to turn light off */
+  pinNum .req r0
+  pinVal .req r1
+  mov pinNum, #16
+  mov pinVal, #0
+  bl SetGpio
+  .unreq pinNum
+  .unreq pinVal
+
   bl sleep$
-  str r1, [r0, #28]  @ Turn pin on to turn light off.
+
+  /* set pin to turn light on */
+  pinNum .req r0
+  pinVal .req r1
+  mov pinNum, #16
+  mov pinVal, #1
+  bl SetGpio
+  .unreq pinNum
+  .unreq pinVal
+
   bl sleep$
-  b flash_loop$  @ repeat.
+
+  /* repeat forever */
+  b flash_loop$
 
 /* The end. */
 end$: b end$
@@ -34,6 +55,6 @@ sleep$:
   lsl r2, #20
   sleep_loop$:
   sub r2, #1
-  cmp r2, #0
+  cmp r2, #0  @ TODO: use teq, not cmp
   bne sleep_loop$
   mov pc, lr
