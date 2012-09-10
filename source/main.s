@@ -4,6 +4,7 @@ _start:
 b main
 
 .section .text
+.globl flash_once
 main:
 mov sp, #0x8000
 
@@ -14,20 +15,7 @@ bl set_gpio_function
 
 /* Flash OK light forever. */
 flash_loop$:
-
-  mov r0, #16  @ pin number
-  mov r1, #0  @ pin value: clear pin to turn light on
-  bl set_gpio
-
-  bl sleep$
-
-  mov r0, #16  @ pin number
-  mov r1, #1  @ pin value: set pin to turn light off
-  bl set_gpio
-
-  bl sleep$
-
-  /* repeat forever */
+  bl flash_once
   b flash_loop$
 
 /* The end. */
@@ -41,3 +29,20 @@ sleep$:
     teq r0, #0
     bne sleep_loop$
   mov pc, lr
+
+flash_once:
+  push {lr}
+
+  mov r0, #16  @ pin number
+  mov r1, #0  @ pin value: clear pin to turn light on
+  bl set_gpio
+
+  bl sleep$
+
+  mov r0, #16  @ pin number
+  mov r1, #1  @ pin value: set pin to turn light off
+  bl set_gpio
+
+  bl sleep$
+
+  pop {pc}
