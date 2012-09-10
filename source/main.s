@@ -19,7 +19,7 @@ bl set_gpio_function
 /* Flash OK light forever. */
 flash_loop$:
 
-  /* clear pin to turn light off */
+  /* clear pin to turn light on */
   pin_num .req r0
   pin_val .req r1
   mov pin_num, #16
@@ -30,7 +30,7 @@ flash_loop$:
 
   bl sleep$
 
-  /* set pin to turn light on */
+  /* set pin to turn light off */
   pin_num .req r0
   pin_val .req r1
   mov pin_num, #16
