@@ -7,8 +7,6 @@ b main
 main:
 mov sp, #0x8000
 
-bl GetGpioAddress
-
 /* Enable output to 16th GPIO pin. */
 pinNum .req r0
 pinFunc .req r1
