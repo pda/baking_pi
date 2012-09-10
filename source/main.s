@@ -47,12 +47,11 @@ flash_loop$:
 /* The end. */
 end$: b end$
 
-/* sleep for 2^20 iterations */
+/* sleep for 2 million iterations */
 sleep$:
-  mov r2, #1
-  lsl r2, #20
+  ldr r0, =2000000
   sleep_loop$:
-  sub r2, #1
-  teq r2, #0
-  bne sleep_loop$
+    sub r0, #1
+    teq r0, #0
+    bne sleep_loop$
   mov pc, lr
