@@ -8,36 +8,22 @@ main:
 mov sp, #0x8000
 
 /* Enable output to 16th GPIO pin. */
-pin_num .req r0
-pin_func .req r1
-mov pin_num, #16
-mov pin_func, #1  @ Use pin as output.
+mov r0, #16  @ pin number
+mov r1, #1  @ pin function: use pin for output
 bl set_gpio_function
-.unreq pin_num
-.unreq pin_func
 
 /* Flash OK light forever. */
 flash_loop$:
 
-  /* clear pin to turn light on */
-  pin_num .req r0
-  pin_val .req r1
-  mov pin_num, #16
-  mov pin_val, #0
+  mov r0, #16  @ pin number
+  mov r1, #0  @ pin value: clear pin to turn light on
   bl set_gpio
-  .unreq pin_num
-  .unreq pin_val
 
   bl sleep$
 
-  /* set pin to turn light off */
-  pin_num .req r0
-  pin_val .req r1
-  mov pin_num, #16
-  mov pin_val, #1
+  mov r0, #16  @ pin number
+  mov r1, #1  @ pin value: set pin to turn light off
   bl set_gpio
-  .unreq pin_num
-  .unreq pin_val
 
   bl sleep$
 
