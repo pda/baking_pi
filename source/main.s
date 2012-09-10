@@ -53,6 +53,6 @@ sleep$:
   lsl r2, #20
   sleep_loop$:
   sub r2, #1
-  cmp r2, #0  @ TODO: use teq, not cmp
+  teq r2, #0
   bne sleep_loop$
   mov pc, lr
