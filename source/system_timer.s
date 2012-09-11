@@ -22,41 +22,48 @@ get_system_timer_address:
 
 
 /**
+ * Output: Current 64 bit value of 1MHz counter.
+ * r0: lo 32 bits
+ * r1: hi 32 bits
+ */
+get_timestamp:
+  push {lr}
+  bl get_system_timer_address
+  ldrd r0, r1, [r0, #4]
+  pop {pc}
+
+
+/**
  * Sleep for the microseconds specified in r0.
  */
 microsleep:
-  push {r4, r5, lr}
+  push {r4, r5, r6, lr}
 
-  mov r4, r0
-  duration .req r4
-
-  bl get_system_timer_address
-  mov r5, r0
-  timer_addr .req r5
-
-  until_lo .req r0
-  until_hi .req r1
-  now_lo .req r2
-  now_hi .req r3
+  mov r6, r0
+  duration .req r6
 
   /* derive time to sleep until */
-  ldrd until_lo, until_hi, [timer_addr, #4]
+  until_lo .req r4
+  until_hi .req r5
+  bl get_timestamp
+  mov until_lo, r0
+  mov until_hi, r1
   add until_lo, duration
   addcs until_hi, #1
   .unreq duration
 
-  /* loop while now < until */
+  /* loop while now < until (64 bit comparison) */
   microsleep_loop$:
-    ldrd now_lo, now_hi, [timer_addr, #4]
-    @cmp now_hi, until_hi
-    @cmpeq now_lo, until_lo  @ check lo if now_hi == until_hi
-    cmp now_lo, until_lo  @ check lo if now_hi == until_hi
+    now_lo .req r0
+    now_hi .req r1
+    bl get_timestamp
+    cmp now_hi, until_hi
+    cmpeq now_lo, until_lo  @ check lo if now_hi == until_hi
     blo microsleep_loop$   @ loop if now_hi < until_hi OR now < until
 
-  .unreq timer_addr
   .unreq until_lo
   .unreq until_hi
   .unreq now_lo
   .unreq now_hi
 
-  pop {r4, r5, pc}
+  pop {r4, r5, r6, pc}
