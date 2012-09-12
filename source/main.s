@@ -1,10 +1,15 @@
+/**
+ * .init
+ */
 .section .init
 .globl _start
 _start:
 b main
 
+/**
+ * .text
+ */
 .section .text
-.globl flash_once
 main:
 mov sp, #0x8000
 
@@ -13,29 +18,36 @@ mov r0, #16  @ pin number
 mov r1, #1  @ pin function: use pin for output
 bl set_gpio_function
 
-/* Flash OK light forever. */
+/* Wait a moment after bootloader flashes */
+ldr r0, =500000  @ 500ms
+bl microsleep
+
+/* Flash OK light based on pattern. */
+pattern .req r4
+ldr pattern, =pattern_data  @ load address of data
+ldr pattern, [pattern]  @ load actual data from address
+sequence .req r5
+mov sequence, #0
 flash_loop$:
-  bl flash_once
+  mov r0, #16  @ pin number
+  mov r1, #1  @ pin value read from pattern bitfield
+  lsl r1, sequence
+  and r1, pattern
+  bl set_gpio
+
+  ldr r0, =200000  @ 250ms
+  bl microsleep
+
+  add sequence, #1
+  and sequence, #0b11111 @ mod 32
   b flash_loop$
 
-/* The end. */
-end$: b end$
 
-flash_once:
-  push {lr}
+/**
+ * .data
+ */
+.section .data
+.align 2
 
-  mov r0, #16  @ pin number
-  mov r1, #0  @ pin value: clear pin to turn light on
-  bl set_gpio
-
-  ldr r0, =100000
-  bl microsleep
-
-  mov r0, #16  @ pin number
-  mov r1, #1  @ pin value: set pin to turn light off
-  bl set_gpio
-
-  ldr r0, =900000
-  bl microsleep
-
-  pop {pc}
+pattern_data:
+.int 0b11111010101110001000100011101010
